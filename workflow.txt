@@ -1,0 +1,137 @@
+$pip install django djangorestframework django-rest-knox
+
+$ pip freeze > requirements.txt
+$ django-admin startproject leadsmanager
+$ python manage.py startapp leads
+
+
+
+under settings.py:
+    INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'leads',
+    'rest_framework',
+]
+
+############################################
+Database using postgres:
+$ pip install psycopg3 psycopg3-binary
+
+
+
+Note that postgres and pgAdmin has already been installed.
+to access raw from gitBash on windows
+$ psql -U postgres
+then:
+postgres=# CREATE DATABASE leadsdb OWNER postgres;
+
+# At pgAdmin inside the properties, under security: grantee=postgres, previleges=all, grantor=postgres.
+
+# In settings.py go down to database:
+
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'leadsdb', 
+        'USER': 'postgres',
+        'PASSWORD': 'dozman4db',
+        'HOST': 'localhost'
+    }
+}
+
+
+
+
+##################################
+then make migration 
+$ python manage.py makemigrations leads  #this is gonna create migration
+$ python manage.py migrate  #this is gonna run all migration
+ 
+
+
+
+ ###############################
+ then create serializer:
+    from rest_framework import serializers
+    from leads.models import Lead
+
+
+    # Lead Serializer here we are converting our lead model to a serializer.
+    class LeadSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Lead
+            fields = '__all__'
+
+
+
+
+
+########################################
+# creating an api file in the lead/  dir:
+    from leads.models import Lead
+    from rest_framework import viewsets, permissions
+    from .serializers import LeadSerializer
+
+
+    # Lead Viewset
+    class LeadViewSet(viewsets.ModelViewSet):
+        queryset = Lead.objects.all()  #this grabs all the leads
+        permission_classes = [
+            permissions.AllowAny
+        ]
+        serializer_class = LeadSerializer
+
+
+#######################################
+creating the urls.py file in the leads/ dir:
+    from rest_framework import routers
+    from .api import LeadViewSet
+
+
+    router = routers.DefaultRouter()
+    router.register('api/leads', LeadViewSet, 'leads')
+
+    urlpatterns = router.urls #this gives us the urls that was registered
+
+
+
+#################################
+then make adjustments to the leadsmanager/urls.py dir:
+    from django.contrib import admin
+    from django.urls import path, include
+
+ 
+    urlpatterns = [
+        path('', include('leads.urls')),
+    ]
+
+
+
+
+
+##############################################
+##############################################
+##############################################
+USING POSTMAN
+first send the request to: http://localhost:8000/api/leads
+when you do GET request 
+you should get an empty array because nothing is there.
+##############################
+then post to :http://localhost:8000/api/leads/    #note it end with a back slash
+in the header:
+    key:content-type, value: application/json
+in the body:
+    {
+        "name": "sam smith",
+        "email": "sams@gmail.com",
+        "message": "Please contact sam"
+    }
+#################################
+you can delete:
+    http://localhost:8000/api/leads/2/
+    '2' is the id
